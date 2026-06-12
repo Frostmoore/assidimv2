@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>CADisableMinimumFrameDurationOnPhone</key>
+		<true/>
+		<key>CFBundleDevelopmentRegion</key>
+		<string>$(DEVELOPMENT_LANGUAGE)</string>
+		<key>CFBundleDisplayName</key>
+		<string>assidim</string>
+		<key>NSCameraUsageDescription</key>
+		<string>Questa app utilizza la fotocamera per permetterti di caricare i tuoi documenti o le tue immagini scattando loro una foto. Le immagini che caricherai saranno usate esclusivamente per la gestione della tua richiesta e non verranno mai comunicate all'esterno.</string>
+		<key>CFBundleExecutable</key>
+		<string>$(EXECUTABLE_NAME)</string>
+		<key>CFBundleIdentifier</key>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+		<key>CFBundleInfoDictionaryVersion</key>
+		<string>6.0</string>
+		<key>CFBundleName</key>
+		<string>assidim</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>$(FLUTTER_BUILD_NAME)</string>
+		<key>CFBundleSignature</key>
+		<string>????</string>
+		<key>CFBundleVersion</key>
+		<string>$(FLUTTER_BUILD_NUMBER)</string>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>sms</string>
+			<string>tel</string>
+		</array>
+		<key>LSRequiresIPhoneOS</key>
+		<true/>
+		<key>NSFaceIDUsageDescription</key>
+		<string>Questa app utilizzerà i tuoi dati biometrici per permetterti di accedere alla tua area riservata.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+    	<string>Questa app utilizzerà l’accesso alla memoria interna del tuo dispositivo per permetterti di caricare documenti sui form di denuncia sinistro, richiesta preventivo e invio documenti.</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>La tua posizione verrà utilizzata esclusivamente per fini di supporto ai servizi dell’Agenzia. Un esempio di questo supporto può essere la comunicazione dell’indirizzo in cui ti trovi, o la strada in cui si trovava l’autovettura al momento del guasto o dell’incidente. Solo tu sarai in grado di vedere queste informazioni e le stesse non verranno registrate o trasmesse al di fuori del tuo dispositivo.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>La tua posizione verrà utilizzata esclusivamente per fini di supporto ai servizi dell’Agenzia. Un esempio di questo supporto può essere la comunicazione dell’indirizzo in cui ti trovi, o la strada in cui si trovava l’autovettura al momento del guasto o dell’incidente. Solo tu sarai in grado di vedere queste informazioni e le stesse non verranno registrate o trasmesse al di fuori del tuo dispositivo.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>La tua posizione verrà utilizzata esclusivamente per fini di supporto ai servizi dell’Agenzia. Un esempio di questo supporto può essere la comunicazione dell’indirizzo in cui ti trovi, o la strada in cui si trovava l’autovettura al momento del guasto o dell’incidente. Solo tu sarai in grado di vedere queste informazioni e le stesse non verranno registrate o trasmesse al di fuori del tuo dispositivo.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Il microfono verrà utilizzato nel caso di registrazione di video in fase di denuncia sinistro</string>
+		<key>UIApplicationSupportsIndirectInputEvents</key>
+		<true/>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
+		<key>UILaunchStoryboardName</key>
+		<string>LaunchScreen</string>
+		<key>UIMainStoryboardFile</key>
+		<string>Main</string>
+		<key>UIStatusBarHidden</key>
+		<false/>
+		<key>UISupportedInterfaceOrientations</key>
+		<array>
+			<string>UIInterfaceOrientationPortrait</string>
+		</array>
+		<key>UISupportedInterfaceOrientations~ipad</key>
+		<array>
+			<string>UIInterfaceOrientationLandscapeLeft</string>
+			<string>UIInterfaceOrientationLandscapeRight</string>
+			<string>UIInterfaceOrientationPortrait</string>
+			<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		</array>
+	</dict>
+</plist>
