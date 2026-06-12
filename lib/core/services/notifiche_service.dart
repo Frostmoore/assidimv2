@@ -17,7 +17,7 @@ class NotificheService {
 
   /// Segna la notifica come letta (JWT identifica l'utente).
   Future<void> markAsRead(String notificaId, String username) async {
-    final url = Uri.https(constants.PATH, constants.ENDPOINT_V2_NOTI);
+    final url = Uri.https(constants.PATH, constants.ENDPOINT_V2_NOTI_READ);
     await _api.postJsonV2(url, body: {'id': notificaId});
   }
 
@@ -25,7 +25,7 @@ class NotificheService {
   Future<Notifica?> fetchSingle(String notificaId, String username) async {
     final url = Uri.https(
       constants.PATH,
-      constants.ENDPOINT_V2_NOTI,
+      constants.ENDPOINT_V2_NOTI_SINGLE,
       {'id': notificaId},
     );
     try {
