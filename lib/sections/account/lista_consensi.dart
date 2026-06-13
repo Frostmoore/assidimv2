@@ -28,7 +28,7 @@ class _ListaConsensiState extends State<ListaConsensi> {
 
   Future<void> _save(int id, bool value) async {
     final provider = context.read<AppProvider>();
-    final url = Uri.https(constants.PATH, constants.ENDPOINT_V2_PRIVACY);
+    final url = constants.apiUri(constants.ENDPOINT_V2_PRIVACY);
     setState(() => _busy = true);
     try {
       await provider.apiService.patchJsonV2(url, body: {

@@ -462,8 +462,7 @@ class _SinistroFormState extends State<SinistroForm> {
           };
         }
 
-        final url = Uri.parse(
-            'https://${constants.PATH}${constants.ENDPOINT_V2_SINISTRO}');
+        final url = constants.apiUri(constants.ENDPOINT_V2_SINISTRO);
 
         final files = <http.MultipartFile>[];
         if (fotoCAI != null) {

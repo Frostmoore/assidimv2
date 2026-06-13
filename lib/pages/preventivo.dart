@@ -205,8 +205,7 @@ class _PreventivoFormState extends State<PreventivoForm> {
       'descrizione': descrizioneController.text,
     };
 
-    final url = Uri.parse(
-        'https://${constants.PATH}${constants.ENDPOINT_V2_PREVENTIVO}');
+    final url = constants.apiUri(constants.ENDPOINT_V2_PREVENTIVO);
 
     final files = <http.MultipartFile>[];
     if (fronteDoc != null) {

@@ -12,11 +12,10 @@ class WebViewContainer extends StatefulWidget {
 class _WebViewContainerState extends State<WebViewContainer> {
   final controller = WebViewController()
     ..setJavaScriptMode(JavaScriptMode.unrestricted)
-    ..loadRequest(Uri.parse(
-        'https://www.hybridandgogsv.it/denuncia_sinistro.php?id=' +
-            constants.ID +
-            "&token=" +
-            constants.TOKEN));
+    ..loadRequest(constants.apiUri('/denuncia_sinistro.php', {
+      'id': constants.ID,
+      'token': constants.TOKEN,
+    }));
 
   @override
   Widget build(BuildContext context) {

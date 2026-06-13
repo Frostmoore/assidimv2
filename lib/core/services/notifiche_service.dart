@@ -10,24 +10,20 @@ class NotificheService {
 
   /// Restituisce le notifiche dell'utente autenticato (filtrate dal server via JWT).
   Future<List<Notifica>> fetchNotifiche(String username) async {
-    final url = Uri.https(constants.PATH, constants.ENDPOINT_V2_NOTI);
+    final url = constants.apiUri(constants.ENDPOINT_V2_NOTI);
     final list = await _api.getV2List(url);
     return list.cast<Map<String, dynamic>>().map(Notifica.fromJson).toList();
   }
 
   /// Segna la notifica come letta (JWT identifica l'utente).
   Future<void> markAsRead(String notificaId, String username) async {
-    final url = Uri.https(constants.PATH, constants.ENDPOINT_V2_NOTI_READ);
+    final url = constants.apiUri(constants.ENDPOINT_V2_NOTI_READ);
     await _api.postJsonV2(url, body: {'id': notificaId});
   }
 
   /// Recupera i dettagli di una singola notifica.
   Future<Notifica?> fetchSingle(String notificaId, String username) async {
-    final url = Uri.https(
-      constants.PATH,
-      constants.ENDPOINT_V2_NOTI_SINGLE,
-      {'id': notificaId},
-    );
+    final url = constants.apiUri(constants.ENDPOINT_V2_NOTI_SINGLE, {'id': notificaId});
     try {
       final data = await _api.getV2(url);
       return Notifica.fromJson(data);

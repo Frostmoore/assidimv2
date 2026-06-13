@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:Assidim/assets/constants.dart' as constants;
 import 'package:Assidim/core/providers/app_provider.dart';
 import 'package:Assidim/sections/account/change_username.dart';
 import 'package:Assidim/sections/account/lista_consensi.dart';
@@ -106,8 +107,7 @@ class GestioneConsensi extends StatelessWidget {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          launchUrl(Uri.parse(
-                              'https://hybridandgogsv.it/delete_account.php'));
+                          launchUrl(constants.apiUri('/delete_account.php'));
                         },
                         icon: const Icon(
                             Icons.delete_forever_rounded, size: 17),

@@ -111,7 +111,7 @@ class AuthService {
 
   Future<AuthResult> login(String username, String password) async {
     try {
-      final url = Uri.https(constants.PATH, constants.ENDPOINT_V2_LOGIN);
+      final url = constants.apiUri(constants.ENDPOINT_V2_LOGIN);
       final data = await _api.postJsonV2(url, body: {
         'agency_id': constants.ID,
         'username': username,
@@ -119,14 +119,19 @@ class AuthService {
       });
 
       final token = data['token']?.toString() ?? '';
+      final refreshToken = data['refresh_token']?.toString() ?? '';
       final userMap = data['user'] as Map<String, dynamic>?;
       if (userMap == null) return AuthResult.failure('100');
 
       _api.setToken(token);
       await _storage.saveJwtToken(token);
+      // Auto-login senza salvare la password: si conserva il refresh token.
+      if (refreshToken.isNotEmpty) {
+        await _storage.saveRefreshToken(refreshToken);
+      }
 
       final user = UserData.fromJson(userMap);
-      await _storage.saveCredentials(username: user.username, password: password);
+      await _storage.saveUsername(user.username);
       await _storage.saveUserData(user);
       await _storage.setLoggedIn(true);
 
@@ -147,35 +152,69 @@ class AuthService {
   // ─── Auto-login ───────────────────────────────────────────────────────────
 
   Future<AuthResult> autoLogin() async {
-    // Try JWT first
+    // 1) Prova il JWT salvato
     final jwt = await _storage.getJwtToken();
     if (jwt != null && jwt.isNotEmpty) {
       _api.setToken(jwt);
       try {
-        final url = Uri.https(constants.PATH, constants.ENDPOINT_V2_ME);
-        final data = await _api.getV2(url);
-        final userMap = data['user'] as Map<String, dynamic>? ?? data;
-        final user = UserData.fromJson(userMap);
-        return AuthResult.ok(user);
+        return AuthResult.ok(await _fetchMe());
       } on ApiException catch (e) {
         if (e.statusCode == 401) {
           _api.clearToken();
           await _storage.clearJwtToken();
-          // Fall through to credentials
+          // JWT scaduto → prosegue col refresh token
         } else {
           return AuthResult.networkError(e.message);
         }
       }
     }
 
-    // Fallback: re-login with stored credentials
+    // 2) JWT assente/scaduto → scambia il refresh token per un nuovo JWT
     final loggedIn = await _storage.isLoggedIn();
     if (!loggedIn) return AuthResult.notLoggedIn();
 
-    final creds = await _storage.getCredentials();
-    if (creds == null) return AuthResult.notLoggedIn();
+    if (!await refresh()) return AuthResult.notLoggedIn();
 
-    return login(creds.username, creds.password);
+    // 3) Con il nuovo JWT recupera l'utente
+    try {
+      return AuthResult.ok(await _fetchMe());
+    } on ApiException catch (e) {
+      return AuthResult.networkError(e.message);
+    }
+  }
+
+  /// Scambia il refresh token salvato con un nuovo JWT (rotazione lato server).
+  /// Ritorna true se il rinnovo riesce; in caso contrario pulisce il refresh
+  /// token (serve un login manuale).
+  Future<bool> refresh() async {
+    final stored = await _storage.getRefreshToken();
+    if (stored == null || stored.isEmpty) return false;
+
+    try {
+      final data = await _api.postJsonV2(
+        constants.apiUri(constants.ENDPOINT_V2_REFRESH),
+        body: {'refresh_token': stored},
+      );
+      final token = data['token']?.toString() ?? '';
+      final newRefresh = data['refresh_token']?.toString() ?? '';
+      if (token.isEmpty) return false;
+
+      _api.setToken(token);
+      await _storage.saveJwtToken(token);
+      if (newRefresh.isNotEmpty) {
+        await _storage.saveRefreshToken(newRefresh);
+      }
+      return true;
+    } on ApiException {
+      await _storage.clearRefreshToken();
+      return false;
+    }
+  }
+
+  Future<UserData> _fetchMe() async {
+    final data = await _api.getV2(constants.apiUri(constants.ENDPOINT_V2_ME));
+    final userMap = data['user'] as Map<String, dynamic>? ?? data;
+    return UserData.fromJson(userMap);
   }
 
   // ─── Registrazione ────────────────────────────────────────────────────────
@@ -195,7 +234,7 @@ class AuthService {
     required bool privacy4,
   }) async {
     try {
-      final url = Uri.https(constants.PATH, constants.ENDPOINT_V2_REG);
+      final url = constants.apiUri(constants.ENDPOINT_V2_REG);
       final playerId = '${username}_${DateTime.now().millisecondsSinceEpoch}';
 
       await _api.postJsonV2(url, body: {
@@ -231,7 +270,7 @@ class AuthService {
 
   Future<bool> resetPassword(String usernameOrEmail) async {
     try {
-      final url = Uri.https(constants.PATH, constants.ENDPOINT_V2_PASS);
+      final url = constants.apiUri(constants.ENDPOINT_V2_PASS);
       await _api.postJsonV2(url, body: {
         'agency_id': constants.ID,
         'username': usernameOrEmail,
@@ -245,6 +284,17 @@ class AuthService {
   // ─── Logout ───────────────────────────────────────────────────────────────
 
   Future<void> logout() async {
+    // Revoca il refresh token lato server (best-effort, non bloccante)
+    final stored = await _storage.getRefreshToken();
+    if (stored != null && stored.isNotEmpty) {
+      try {
+        await _api.postJsonV2(
+          constants.apiUri(constants.ENDPOINT_V2_LOGOUT),
+          body: {'refresh_token': stored},
+        );
+      } catch (_) {}
+    }
+
     try {
       await OneSignal.logout();
     } catch (_) {}

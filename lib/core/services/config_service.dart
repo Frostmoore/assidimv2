@@ -9,11 +9,7 @@ class ConfigService {
   const ConfigService(this._api);
 
   Future<AppConfig> fetchConfig() async {
-    final url = Uri.https(
-      constants.PATH,
-      constants.ENDPOINT_V2_CONFIG,
-      {'id': constants.ID, 'token': constants.TOKEN},
-    );
+    final url = constants.apiUri(constants.ENDPOINT_V2_CONFIG, {'id': constants.ID, 'token': constants.TOKEN});
     final data = await _api.getV2(url);
     return AppConfig.fromJson(data);
   }

@@ -38,7 +38,7 @@ class _ChangeUsernameState extends State<ChangeUsername> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
 
-    final url = Uri.https(constants.PATH, constants.ENDPOINT_V2_ME);
+    final url = constants.apiUri(constants.ENDPOINT_V2_ME);
     final provider = context.read<AppProvider>();
 
     try {
@@ -46,10 +46,7 @@ class _ChangeUsernameState extends State<ChangeUsername> {
         'username': _uCtrl.text.trim(),
         'email': _mCtrl.text.trim(),
       });
-      await provider.storage.saveCredentials(
-        username: _uCtrl.text.trim(),
-        password: '',
-      );
+      await provider.storage.saveUsername(_uCtrl.text.trim());
       _showSnack('Credenziali aggiornate');
     } on ApiException catch (e) {
       debugPrint('[CHANGE] errore: $e');

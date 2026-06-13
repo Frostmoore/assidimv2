@@ -43,11 +43,7 @@ class _NotificaState extends State<Notifica> with TickerProviderStateMixin {
     final prefs = await SharedPreferences.getInstance();
     viste = prefs.getStringList('notifiche_viste')?.toSet() ?? {};
 
-    final url = Uri.https(
-      constants.PATH,
-      constants.ENDPOINT_V2_NOTI_GENE,
-      {'agency_id': constants.ID},
-    );
+    final url = constants.apiUri(constants.ENDPOINT_V2_NOTI_GENE, {'agency_id': constants.ID});
 
     try {
       final list = await _provider.apiService.getV2List(url);
@@ -171,6 +167,8 @@ class _NotificaState extends State<Notifica> with TickerProviderStateMixin {
                       Text(
                         testo,
                         textAlign: TextAlign.center,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w400,
@@ -239,7 +237,14 @@ class _NotificaState extends State<Notifica> with TickerProviderStateMixin {
       initialPage: currentPage,
     );
 
-    const maxCardHeight = 360.0;
+    // Card compatta: la sezione vive IN LINEA nella home (sopra "Servizi")
+    // e non deve occupare l'intera viewport. Altezza adattiva: più alta solo
+    // se almeno una notifica ha l'immagine. Niente gesture/scroll verticali
+    // interni: rubavano il drag e impedivano di scorrere la pagina
+    // (la home sembrava "sostituita" dalla notifica). Si chiude con la X.
+    final hasImage = nonViste
+        .any((n) => (n['immagine'] ?? '').toString().isNotEmpty);
+    final maxCardHeight = hasImage ? 380.0 : 230.0;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -257,45 +262,30 @@ class _NotificaState extends State<Notifica> with TickerProviderStateMixin {
               return Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
-                child: GestureDetector(
-                  onVerticalDragEnd: (details) async {
-                    if (details.primaryVelocity != null &&
-                        details.primaryVelocity! < -200) {
-                      setState(() => _cardDismissedIndex = idx);
-                      await Future.delayed(const Duration(milliseconds: 220));
-                      _segnaVista(notifica['id']?.toString() ?? '');
-                      setState(() => _cardDismissedIndex = null);
-                    }
-                  },
-                  child: AnimatedOpacity(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 220),
+                  opacity: isBeingDismissed ? 0.0 : 1.0,
+                  child: AnimatedSlide(
                     duration: const Duration(milliseconds: 220),
-                    opacity: isBeingDismissed ? 0.0 : 1.0,
-                    child: AnimatedSlide(
-                      duration: const Duration(milliseconds: 220),
-                      offset: isBeingDismissed
-                          ? const Offset(0, -0.13)
-                          : Offset.zero,
-                      child: ConstrainedBox(
-                        constraints:
-                            const BoxConstraints(maxHeight: maxCardHeight),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: SingleChildScrollView(
-                              padding: EdgeInsets.zero,
-                              child: _notificaCard(
-                                notifica,
-                                () async {
-                                  setState(() => _cardDismissedIndex = idx);
-                                  await Future.delayed(
-                                      const Duration(milliseconds: 220));
-                                  _segnaVista(
-                                      notifica['id']?.toString() ?? '');
-                                  setState(() => _cardDismissedIndex = null);
-                                },
-                              ),
-                            ),
+                    offset: isBeingDismissed
+                        ? const Offset(0, -0.13)
+                        : Offset.zero,
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(maxHeight: maxCardHeight),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: _notificaCard(
+                            notifica,
+                            () async {
+                              setState(() => _cardDismissedIndex = idx);
+                              await Future.delayed(
+                                  const Duration(milliseconds: 220));
+                              _segnaVista(notifica['id']?.toString() ?? '');
+                              setState(() => _cardDismissedIndex = null);
+                            },
                           ),
                         ),
                       ),

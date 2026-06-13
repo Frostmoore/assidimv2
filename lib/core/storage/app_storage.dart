@@ -9,28 +9,18 @@ import 'package:Assidim/core/models/user_data.dart';
 abstract class _Key {
   // SecureStorage
   static const username = 'username';
-  static const password = 'password';
   static const userId = 'user_id';
   static const email = 'email';
   static const nome = 'nome';
   static const cognome = 'cognome';
   static const playerId = 'playerid';
   static const jwtToken = 'jwt_token';
+  static const refreshToken = 'refresh_token';
 
   // SharedPreferences
   static const isLoggedIn = 'isAlreadyLogged';
   static const biometricsPermission = 'hasGivenPermissionToUseBiometrics';
   static const biometricsUsed = 'alreadyLoggedInWithBiometrics';
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Credentials DTO
-// ─────────────────────────────────────────────────────────────────────────────
-
-class StoredCredentials {
-  final String username;
-  final String password;
-  const StoredCredentials({required this.username, required this.password});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -58,23 +48,19 @@ class AppStorage {
     await prefs.setBool(_Key.isLoggedIn, value);
   }
 
-  // ─── Credenziali ──────────────────────────────────────────────────────────
+  // ─── Username (non sensibile, per prefill) ──────────────────────────────────
 
-  Future<void> saveCredentials({
-    required String username,
-    required String password,
-  }) async {
-    await _secure.write(key: _Key.username, value: username);
-    await _secure.write(key: _Key.password, value: password);
-  }
+  Future<void> saveUsername(String username) =>
+      _secure.write(key: _Key.username, value: username);
 
-  Future<StoredCredentials?> getCredentials() async {
-    final username = await _secure.read(key: _Key.username);
-    final password = await _secure.read(key: _Key.password);
-    if (username == null || username.isEmpty ||
-        password == null || password.isEmpty) return null;
-    return StoredCredentials(username: username, password: password);
-  }
+  // ─── Refresh token (al posto della password) ────────────────────────────────
+
+  Future<void> saveRefreshToken(String token) =>
+      _secure.write(key: _Key.refreshToken, value: token);
+
+  Future<String?> getRefreshToken() => _secure.read(key: _Key.refreshToken);
+
+  Future<void> clearRefreshToken() => _secure.delete(key: _Key.refreshToken);
 
   // ─── Dati utente ──────────────────────────────────────────────────────────
 

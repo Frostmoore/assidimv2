@@ -157,8 +157,7 @@ class _DocumentoFormState extends State<DocumentoForm> {
       'descrizione': descrizioneController.text,
     };
 
-    final url = Uri.parse(
-        'https://${constants.PATH}${constants.ENDPOINT_V2_DOCUMENTO}');
+    final url = constants.apiUri(constants.ENDPOINT_V2_DOCUMENTO);
 
     final files = <http.MultipartFile>[];
     if (documentazione != null) {

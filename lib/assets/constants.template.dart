@@ -19,10 +19,21 @@ const String TOKEN = '!TOKEN';
 //  rimosse (il nuovo server espone solo la v2).
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// true in produzione (HTTPS); false per il test locale in HTTP
+/// (es. server di sviluppo raggiunto dall'emulatore Android su 10.0.2.2:8001).
+const bool USE_HTTPS = true;
+
 const String PATH = 'www.hybridandgogsv2.it';
+
+/// Costruisce gli URI verso il backend rispettando USE_HTTPS.
+Uri apiUri(String path, [Map<String, dynamic>? queryParameters]) => USE_HTTPS
+    ? Uri.https(PATH, path, queryParameters)
+    : Uri.http(PATH, path, queryParameters);
 
 const String ENDPOINT_V2_CONFIG = '/res/api/v2/agency.php';
 const String ENDPOINT_V2_LOGIN = '/res/api/v2/auth/login.php';
+const String ENDPOINT_V2_REFRESH = '/res/api/v2/auth/refresh.php';
+const String ENDPOINT_V2_LOGOUT = '/res/api/v2/auth/logout.php';
 const String ENDPOINT_V2_REG = '/res/api/v2/auth/register.php';
 const String ENDPOINT_V2_PASS = '/res/api/v2/auth/forgot-password.php';
 const String ENDPOINT_V2_ME = '/res/api/v2/user/me.php';
@@ -37,8 +48,8 @@ const String ENDPOINT_V2_PREVENTIVO = '/res/api/v2/claims/preventivo.php';
 const String ENDPOINT_V2_DOCUMENTO = '/res/api/v2/claims/documento.php';
 const String ENDPOINT_V2_POLIZZE = '/res/api/v2/polizze/index.php';
 
-/// Base URL per le immagini servite dal CDN del backend.
-const String IMG_PATH = 'https://$PATH/res/';
+/// Base URL per le immagini servite dal backend.
+final String IMG_PATH = '${USE_HTTPS ? 'https' : 'http'}://$PATH/res/';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Colori di fallback (usati prima che la config API sia disponibile)
