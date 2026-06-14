@@ -60,13 +60,13 @@ const Color COLORE_SECONDARIO = Color(0xff2b346b);
 const Color COLORE_TERZIARIO = Color(0xff2b346b);
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Placeholder white-label (sostituiti dallo script di generazione)
+//  Testi CAI / denuncia — default neutri (non personalizzati per agenzia).
 // ─────────────────────────────────────────────────────────────────────────────
 
-const String TESTOCAI = '!TESTO_CAI';
-const String LABEL_BOTTONE_CAI = '!LABEL_CAI';
-const String TITOLO_FORM_DENUNCIA = '!TITOLO_DENUNCIA';
-final Uri CAI_LINK = Uri.parse('!CAI_LINK');
+const String TESTOCAI = 'Compila il modulo di constatazione amichevole (CAI).';
+const String LABEL_BOTTONE_CAI = 'Constatazione Amichevole';
+const String TITOLO_FORM_DENUNCIA = 'Denuncia un sinistro';
+final Uri CAI_LINK = Uri.parse('https://hybridandgogsv2.it');
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Testi statici UI
