@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  TEMPLATE white-label — copia committabile di constants.dart (gitignored).
-//  Lo script di generazione sostituisce i placeholder !XXX e salva il file
+//  Lo script di generazione sostituisce i placeholder e salva il file
 //  come lib/assets/constants.dart. Tenere i due file allineati.
 // ─────────────────────────────────────────────────────────────────────────────
 
