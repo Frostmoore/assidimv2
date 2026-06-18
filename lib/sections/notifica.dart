@@ -232,6 +232,19 @@ class _NotificaState extends State<Notifica> with TickerProviderStateMixin {
 
     if (nonViste.isEmpty) return const SizedBox.shrink();
 
+    // Una sola notifica: niente carosello ad altezza fissa (lasciava un grosso
+    // spazio vuoto sotto). La card si adatta al proprio contenuto.
+    if (nonViste.length == 1) {
+      final notifica = nonViste.first;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: _notificaCard(
+          notifica,
+          () => _segnaVista(notifica['id']?.toString() ?? ''),
+        ),
+      );
+    }
+
     final pageController = PageController(
       viewportFraction: 0.92,
       initialPage: currentPage,
