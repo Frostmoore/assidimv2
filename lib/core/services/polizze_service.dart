@@ -7,7 +7,10 @@ import 'package:Assidim/core/models/polizza.dart';
 import 'package:Assidim/core/models/user_data.dart';
 import 'package:Assidim/core/services/api_service.dart';
 
-/// Recupera le polizze attive tramite AssiEasy (con fallback JWT per TTYCreo).
+/// Recupera le polizze dai provider configurati per l'agenzia.
+/// AssiEasy e Sintesi sono provider INDIPENDENTI: ognuno parte se l'agenzia ha
+/// i suoi parametri valorizzati. Se l'agenzia ha entrambi, le polizze dei due
+/// provider vengono unite.
 class PolizzeService {
   final ApiService _api;
 
@@ -17,13 +20,35 @@ class PolizzeService {
     required AppConfig config,
     required UserData user,
   }) async {
-    try {
-      return await _fetchAssiEasy(config: config, user: user);
-    } catch (e) {
-      debugPrint('[Polizze] AssiEasy fallito ($e), provo JWT fallback');
-      return _fetchJwtFallback(config: config, user: user);
+    final polizze = <Polizza>[];
+
+    // Provider AssiEasy — se l'agenzia ha assiurl + assisecret
+    if (config.assiurl.isNotEmpty && config.assisecret.isNotEmpty) {
+      try {
+        polizze.addAll(await _fetchAssiEasy(config: config, user: user));
+      } catch (e) {
+        debugPrint('[Polizze] AssiEasy non disponibile ($e)');
+      }
     }
+
+    // Provider Sintesi — se l'agenzia ha i parametri sintesi valorizzati
+    if (_hasSintesiConfig(config)) {
+      try {
+        polizze.addAll(await _fetchSintesi(config: config, user: user));
+      } catch (e) {
+        debugPrint('[Polizze] Sintesi non disponibile ($e)');
+      }
+    }
+
+    return polizze;
   }
+
+  bool _hasSintesiConfig(AppConfig config) =>
+      config.jwturl != null &&
+      config.aziendaId != null &&
+      config.licenzaId != null &&
+      config.agenziaId != null &&
+      config.chiavePrivata != null;
 
   // ─── AssiEasy ─────────────────────────────────────────────────────────────
 
@@ -40,24 +65,37 @@ class PolizzeService {
       'assi_secret': assisecret,
     };
 
-    // 1. Lookup credenziali
+    // 1. Lookup credenziali — prova lo username, poi l'email (lo username
+    //    dell'app può non combaciare con quello registrato su AssiEasy).
     final urlLookup =
         Uri.https(assiurl, 'assieasy/clienti/autenticazione/get_credenziali_utente');
-    final lookupData = await _api.postForm(urlLookup, fields: {
-      'username': user.username,
-      'codicefiscale': user.cf,
-    }, extraHeaders: headers);
 
-    final passwordAe = lookupData['data']?['PASSWORD'] as String?;
-    if (passwordAe == null || passwordAe.isEmpty) {
-      throw const ApiException('Lookup AssiEasy: password non trovata');
+    String? passwordAe;
+    String aeUsername = user.username;
+    final candidates = <String>{user.username, user.email}
+        .where((c) => c.isNotEmpty);
+    for (final candidate in candidates) {
+      final lookupData = await _api.postForm(urlLookup, fields: {
+        'username': candidate,
+        'codicefiscale': user.cf,
+      }, extraHeaders: headers);
+      final pw = lookupData['data']?['PASSWORD'] as String?;
+      if (pw != null && pw.isNotEmpty) {
+        passwordAe = pw;
+        aeUsername = candidate;
+        break;
+      }
+    }
+    if (passwordAe == null) {
+      // Nessuna credenziale AssiEasy per questo utente → nessuna polizza qui.
+      return <Polizza>[];
     }
 
-    // 2. Login
+    // 2. Login con l'identificativo che ha funzionato (username o email)
     final urlLogin =
         Uri.https(assiurl, 'assieasy/clienti/autenticazione/login');
     final loginData = await _api.postForm(urlLogin, fields: {
-      'username': user.username,
+      'username': aeUsername,
       'password': passwordAe,
     }, extraHeaders: headers);
 
@@ -79,7 +117,7 @@ class PolizzeService {
 
     final rawPolizze = polizzeData['data'] as List<dynamic>?;
     if (rawPolizze == null || rawPolizze.isEmpty) {
-      throw const ApiException('Lista polizze AssiEasy vuota');
+      return <Polizza>[];
     }
 
     // 4. Titoli (per DATA_EFFETTO_TITOLO)
@@ -107,19 +145,12 @@ class PolizzeService {
     }).toList();
   }
 
-  // ─── JWT fallback (TTYCreo) ───────────────────────────────────────────────
+  // ─── Sintesi (JWT) ────────────────────────────────────────────────────────
 
-  Future<List<Polizza>> _fetchJwtFallback({
+  Future<List<Polizza>> _fetchSintesi({
     required AppConfig config,
     required UserData user,
   }) async {
-    if (config.jwturl == null ||
-        config.aziendaId == null ||
-        config.licenzaId == null ||
-        config.agenziaId == null ||
-        config.chiavePrivata == null) {
-      throw const ApiException('Configurazione JWT mancante');
-    }
 
     final jwt = _buildJwt(
       licenzaId: config.licenzaId!,
