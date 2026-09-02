@@ -23,7 +23,13 @@ const String TOKEN = '!TOKEN';
 /// (es. server di sviluppo raggiunto dall'emulatore Android su 10.0.2.2:8001).
 const bool USE_HTTPS = true;
 
-const String PATH = 'www.hybridandgogsv2.it';
+/// Host del backend v2. SENZA `www.`: le pagine web (delete_account.php,
+/// cambiapassword.php, i form pubblici) sono servite da un gruppo di route
+/// vincolato all'host esatto, quindi su `www.` rispondevano 404 — le API
+/// invece funzionano su entrambi, ed è per questo che il bug si vedeva solo
+/// aprendo i link nel browser. Il server oggi redirige `www.` sull'apex, ma
+/// le build nuove devono puntarci dirette: non aggiungere il `www.`.
+const String PATH = 'hybridandgogsv2.it';
 
 /// Costruisce gli URI verso il backend rispettando USE_HTTPS.
 Uri apiUri(String path, [Map<String, dynamic>? queryParameters]) => USE_HTTPS
