@@ -46,6 +46,43 @@ class Polizza {
     );
   }
 
+  /// Polizza che arriva dal NOSTRO server (endpoint v2 `polizze/index.php`),
+  /// cioe' una di quelle caricate a mano dall'area agency.
+  ///
+  /// Serve una factory separata perche' i nomi dei campi sono diversi: AssiEasy
+  /// li manda MAIUSCOLI, il nostro endpoint usa i nomi delle colonne della
+  /// tabella `polizze`. Si traduce qui invece di cambiare la risposta del
+  /// server, che e' il porting fedele di un contratto v2 gia' esistente.
+  ///
+  /// `data_scadenza_titolo` finisce in [dataEffettoTitolo] di proposito: e'
+  /// quel campo che la schermata mostra come "Prossima Scadenza" e usa per il
+  /// conto alla rovescia, il colore e la barra. La scadenza del titolo corrente
+  /// e la decorrenza del successivo sono lo stesso istante, quindi il
+  /// significato combacia.
+  ///
+  /// [idPolizza] resta nullo: e' l'identificativo del gestionale esterno, e il
+  /// nostro database non ne ha uno.
+  factory Polizza.fromServerJson(Map<String, dynamic> json) {
+    String? v(String chiave) {
+      final s = json[chiave]?.toString();
+      return (s == null || s.isEmpty) ? null : s;
+    }
+
+    return Polizza(
+      numeroPolizza: v('n_polizza'),
+      nominativo: v('contraente'),
+      targa: v('targa'),
+      descRamo: v('ramo'),
+      descCompagnia: v('compagnia'),
+      descProdotto: v('prodotto'),
+      frazionamento: v('frazionamento'),
+      dataEffettoUltimaCopertura: v('data_decorrenza'),
+      dataScadenzaContratto: v('data_scadenza_contratto'),
+      descStatoPolizza: v('stato_polizza'),
+      dataEffettoTitolo: v('data_scadenza_titolo'),
+    );
+  }
+
   String get titolo {
     final ramo = descRamo ?? '';
     final t = targa?.trim() ?? '';
