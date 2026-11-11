@@ -2,15 +2,24 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:Assidim/assets/constants.dart' as constants;
 import 'package:Assidim/core/models/app_config.dart';
 import 'package:Assidim/core/models/polizza.dart';
 import 'package:Assidim/core/models/user_data.dart';
 import 'package:Assidim/core/services/api_service.dart';
 
-/// Recupera le polizze dai provider configurati per l'agenzia.
-/// AssiEasy e Sintesi sono provider INDIPENDENTI: ognuno parte se l'agenzia ha
-/// i suoi parametri valorizzati. Se l'agenzia ha entrambi, le polizze dei due
-/// provider vengono unite.
+/// Recupera le polizze da TRE fonti indipendenti e le unisce.
+///
+/// - **AssiEasy** — parte se l'agenzia ha `assiurl` e `assisecret`.
+/// - **Sintesi** — parte se l'agenzia ha i parametri sintesi valorizzati.
+/// - **Nostro server** — parte **sempre**: sono le polizze caricate a mano
+///   dall'area agency, e si devono vedere anche quando il gestionale risponde.
+///
+/// Non c'e' nessuna cascata e nessun fallback: le tre fonti sono alternative
+/// solo nel senso che un'agenzia puo' averne configurate zero, una o tutte.
+/// Ognuna ha il suo try/catch, quindi se una non risponde le altre si vedono
+/// comunque. Il risultato finale e' deduplicato per numero di polizza e
+/// ordinato per prossima scadenza.
 class PolizzeService {
   final ApiService _api;
 
@@ -40,7 +49,68 @@ class PolizzeService {
       }
     }
 
-    return polizze;
+    // Nostro server — SEMPRE, senza condizioni sulla configurazione
+    // dell'agenzia. Non e' un fallback per quando gli altri due non vanno: e'
+    // una terza fonte che si somma, e le polizze caricate a mano si vedono
+    // anche quando il gestionale risponde (decisione utente 2026-10-26).
+    try {
+      polizze.addAll(await _fetchNostroServer());
+    } catch (e) {
+      debugPrint('[Polizze] nostro server non disponibile ($e)');
+    }
+
+    return _ordinaETogliDoppioni(polizze);
+  }
+
+  /// Polizze caricate a mano nell'area agency, lette dal nostro backend.
+  ///
+  /// Nessun parametro: l'utente e l'agenzia li ricava il server dal JWT, e
+  /// [ApiService.getV2] mette gia' l'header di autenticazione. Se non e' stato
+  /// importato niente la risposta e' una lista vuota, e non si vede nulla.
+  Future<List<Polizza>> _fetchNostroServer() async {
+    final data =
+        await _api.getV2(constants.apiUri(constants.ENDPOINT_V2_POLIZZE));
+    final lista = data['polizze'];
+    if (lista is! List) return const [];
+    return lista
+        .whereType<Map<String, dynamic>>()
+        .map(Polizza.fromServerJson)
+        .toList();
+  }
+
+  /// Unisce le fonti togliendo i doppioni e ordinando per prossima scadenza.
+  ///
+  /// Una stessa polizza puo' arrivare due volte: dal gestionale e, se e' stata
+  /// anche importata a mano, dal nostro server. A pari numero di polizza vince
+  /// la **prima** incontrata, e poiche' il nostro server e' interrogato per
+  /// ultimo vince sempre il gestionale: e' la fonte viva, mentre le nostre sono
+  /// una copia caricata a mano che puo' essere vecchia. Le polizze senza numero
+  /// non si possono confrontare e si tengono tutte.
+  ///
+  /// L'ordinamento serve perche' le fonti arrivano concatenate: senza, la lista
+  /// sembrerebbe in ordine casuale all'utente. Quelle senza data vanno in fondo.
+  List<Polizza> _ordinaETogliDoppioni(List<Polizza> polizze) {
+    final visti = <String>{};
+    final uniche = <Polizza>[];
+    for (final p in polizze) {
+      final numero = p.numeroPolizza?.trim().toUpperCase();
+      if (numero == null || numero.isEmpty) {
+        uniche.add(p);
+      } else if (visti.add(numero)) {
+        uniche.add(p);
+      } else {
+        debugPrint('[Polizze] doppione scartato: $numero');
+      }
+    }
+
+    uniche.sort((a, b) {
+      final da = a.dataEffettoTitolo;
+      final db = b.dataEffettoTitolo;
+      if (da == null || da.isEmpty) return (db == null || db.isEmpty) ? 0 : 1;
+      if (db == null || db.isEmpty) return -1;
+      return da.compareTo(db); // le date sono "YYYY-MM-DD": l'ordine testuale e' quello giusto
+    });
+    return uniche;
   }
 
   bool _hasSintesiConfig(AppConfig config) =>
